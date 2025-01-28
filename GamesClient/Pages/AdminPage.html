@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="../Scripts/Gamesjson.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Scripts/AjaxCalls.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <link href="../CSS/AdminStyle.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+            $("#redirect").on("click", function () {
+                window.location.href = 'index.html';  // Redirect to the index page
+            })
+            // Retrieve the user object from local storage
+            let user = localStorage.getItem('loggedInUser');
+            if (user) {
+                user = JSON.parse(user);
+                console.log("Logged in user:", user);
+                const greeting = document.getElementById("userName");
+                greeting.innerHTML = `Hello, ${user.Name} 👋🏼 `;
+            } else {
+                console.log("No user logged in.");
+            }
+
+            // Initialize the DataTables
+            let usersTable = $('#usersTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                lengthMenu: [5, 10, 25],
+                columns: [
+                    { data: "id", title: "ID" },
+                    { data: "userName", title: "User Name" },
+                    { data: "gamesPurchased", title: "Games Purchased" },
+                    { data: "moneySpent", title: "Money Spent" },
+                    {
+                        data: "activeStatus",
+                        title: "Active Status",
+                        render: function (data, type, row, meta) {
+                            return `<input type="checkbox" class="status-checkbox" 
+                    data-user-id="${row.id}" 
+                    ${data ? "checked" : ""} />`;
+                        }
+                    }
+                ]
+            });
+
+            let gamesTable = $('#gamesTable').DataTable({
+                paging: true,
+                searching: true,
+                ordering: true,
+                lengthMenu: [5, 10, 25],
+                columns: [
+                    { data: "gameId", title: "Game ID" },
+                    { data: "title", title: "Title" },
+                    { data: "downloads", title: "Downloads" },
+                    { data: "totalRevenue", title: "Total Revenue" }
+                ]
+            });
+
+            // Initially hide the games table
+            $('#gamesTable_wrapper').hide();
+            $('#usersTable_wrapper').show();
+
+            // Toggle switch to display either users or games table
+            $('#tableToggle').change(function () {
+                if ($(this).prop('checked')) {
+                    console.log('Switch is ON, showing games table.');
+                    fetchGamesData();
+                } else {
+                    console.log('Switch is OFF, showing users table.');
+                    fetchUsersData();
+                }
+            });
+
+            // Fetch data for the users table
+            function fetchUsersData() {
+                const api = "https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users/GetUserInfo";
+                ajaxCall("GET", api, "", function (usersData) {
+                    console.log("Users Data Received:", usersData);
+
+                    // Show the users table and populate data
+                    $('#gamesTable_wrapper').hide();
+                    $('#usersTable_wrapper').show();
+                    usersTable.clear();
+                    usersTable.rows.add(usersData).draw();
+                }, function (err) {
+                    console.error("Error fetching users data:", err);
+                });
+            }
+
+            // Fetch data for the games table
+            function fetchGamesData() {
+                const api = "https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/GetGameInfo";
+                ajaxCall("GET", api, "", function (gamesData) {
+                    console.log("Games Data Received:", gamesData);
+
+                    // Show the games table and populate data
+                    $('#usersTable_wrapper').hide();
+                    $('#gamesTable_wrapper').show();
+                    gamesTable.clear();
+                    gamesTable.rows.add(gamesData).draw();
+                }, function (err) {
+                    console.error("Error fetching games data:", err);
+                });
+            }
+
+            // Fetch and show users data on page load
+            fetchUsersData();
+
+            $(document).on('change', '.status-checkbox', function () {
+                // Get the user ID and the new active status
+                let userId = $(this).data('user-id');  // Get the user ID from the data attribute
+                let activeStatus = $(this).prop('checked') ? 1 : 0;  // 1 if checked, 0 if unchecked
+
+                // Log to check if the correct values are captured
+                console.log("User ID:", userId);
+                console.log("Active Status:", activeStatus);
+
+                // Make the API call to update the active status
+                updateActiveStatus(userId, activeStatus);
+            });
+
+            function updateActiveStatus(userId, activeStatus) {
+                let status
+                if (activeStatus === 0)
+                    status = false
+                    else status=true
+                let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users/UpdateIsActive?id=${userId}&isActive=${status}`
+                ajaxCall("POST", api, "",updateSCB,updateECB)
+
+              
+                function updateSCB(response) {
+                        console.log("Successfully updated active status:", response);
+                    }
+                function updateECB (error) {
+                        console.error("Error updating active status:", error);
+                    }
+            }
+        });
+    </script>
+
+
+</head>
+<body>
+    <h1>GAMING USERS DATA FOR ADMIN</h1>
+    <button id="redirect">Go to Games Store</button>
+
+    <div id="userName"> </div>
+    <div style="margin-bottom: 10px; right: 1px; position: absolute; padding: 10px; display: flex; align-items: center; justify-content: center; width: 200px;">
+        <label class="switch" style="display: flex; align-items: center;">
+            <span class="label-text" style="margin-right: 5px;">Users</span>
+            <input type="checkbox" id="tableToggle" style="display: none;">
+            <span class="slider"></span>
+            <span class="label-text" style="margin-left: 5px;">Games</span>
+        </label>
+    </div>
+
+    <table id="gamesTable" class="display">
+        <thead>
+            <tr>
+                <th>Game Id</th>
+                <th>Title</th>
+                <th>Downloads</th>
+                <th>Total Revenue</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <table id="usersTable" class="display">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>UserName</th>
+                <th>Games Purchased</th>
+                <th>Money Spent</th>
+                <th>Active Status </th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</body>
+</html>

@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../Scripts/AjaxCalls.js"></script>
+    <script src="../Scripts/Gamesjson.js"></script>
+    <link href="../CSS/LoginStyle.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+
+            $("#password").on("input", function () {
+                var pattern = $(this).attr("pattern");
+                var value = $(this).val();
+                var message = "Please match the requested format: letters and digits only";
+                this.setCustomValidity(value.match(pattern) ? "" : message);
+            });
+            $("#email").on("input", function () {
+                var pattern = $(this).attr("pattern");
+                var value = $(this).val();
+                var message = "Please match the requested format: " + pattern + " example123@example.com";
+                this.setCustomValidity(value.match(pattern) ? "" : message);
+            });
+            $("#myRegisterForm").submit(function (e) {
+
+
+                e.preventDefault();
+
+                let user = {  
+                    Name: $("#name").val(),
+                    Email: $("#email").val(),
+                    Password: $("#password").val()
+                };
+                let api = "https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users"
+                ajaxCall("POST", api, JSON.stringify(user), postSCB, postECB)
+                function postSCB(message) {
+                    console.log(message);
+                    if (message===-1) 
+                    {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'failed!',
+                            text: 'User already exists',
+                            footer: '<a href="#" id="LogintoAccount">Login to existing account?</a>'
+                        });
+                        document.getElementById("LogintoAccount").addEventListener("click", function (e) {
+                            e.preventDefault(); 
+                            window.location.href = "LoginPage.html"; // Redirect to the login page
+                        });
+                    }
+                    else {
+                        Swal.fire({
+                            icon: "success",
+                            title: "User Added Successfuly!",
+                            showConfirmButton: false,
+                        });
+                        setTimeout(function () {
+                        //send to server whos is the user who regietered now-cuz he will be the logged in user
+                            let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users/SearchUser`;
+                        ajaxCall("POST", api, JSON.stringify(user), logSCB, logECB)
+                        function logSCB(user) {
+                            console.log(user);
+                            console.log(user);
+                            let loggedUser = {
+                                Id: user.id,
+                                Name: user.name,
+                                Email: user.email,
+                                Password: user.password
+                            };
+                            // Save the user object to local storage as a string
+                            localStorage.setItem('loggedInUser', JSON.stringify(loggedUser));
+                            window.location.href = 'index.html';  // Redirect to the index page
+
+                        }
+                        function logECB(err) {
+                            console.log(err);
+                            }
+                        }, 1000);
+
+                    }
+                }
+                function postECB(err) {
+                    console.log(err);
+                }
+              
+            });
+        })
+
+
+
+    </script>
+</head>
+<body>
+<div class="register">
+    <form id="myRegisterForm">
+        <h1 id="register">Register </h1>
+        <input type="text" id="email" name="email" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$" placeholder="Email"><br>
+        <input type="text" id="name" name="name" title="Name should only contain letters" pattern="[a-zA-Z]+" maxlength="15" placeholder="Name" required><br>
+         <input type="password" id="password" name="password" pattern="[A-Za-z0-9]+" minlength="5" maxlength="10" placeholder="Password" required><br>
+        <input type="submit" value="Submit">
+    </form>
+    </div>
+</body>

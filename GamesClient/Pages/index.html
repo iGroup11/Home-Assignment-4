@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="../Scripts/AjaxCalls.js"></script>
+    <script src="../Scripts/Gamesjson.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="../CSS/GameStyle.css" rel="stylesheet" />
+    <script>
+        $(document).ready(function () {
+            // Retrieve the user object from local storage
+            let user = localStorage.getItem('loggedInUser');
+            if (user) {
+                // Parse the JSON string back to a JavaScript object
+                user = JSON.parse(user);
+                console.log("Logged in user:", user);
+                const greeting = document.getElementById("userName");
+                greeting.innerHTML = `Hello, ${user.Name}👋🏼 `;
+                if (user.Email === "admin@admin.com") { 
+                    const linkbtn = document.createElement('button');
+                    linkbtn.innerText = "Go To Admin Page";
+                    linkbtn.className = "AddOrDeleteGamebtn";
+                    linkbtn.addEventListener("click", function () {
+                        window.location.href = 'AdminPage.html';
+                    });
+                    greeting.appendChild(linkbtn);
+
+                }
+
+            }
+            else {
+                console.log("no user");
+            }
+            givemeMyGames();
+
+            $("#redirect").on("click", function () {
+                window.location.href = 'MyGames.html';  // Redirect to the mygames page
+
+            })
+            $("#Signout").on("click", function () {
+                //delete user from local storage ,and then redirect to login
+                localStorage.removeItem('loggedInUser')
+                window.location.href = 'LoginPage.html';
+            })
+            //try1
+
+            function givemeMyGames() {
+
+                let api = "https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games";
+                ajaxCall("GET", api, "", postSCB, postECB);
+            }
+
+            function postSCB(Gameslist) {
+                rendergames(Gameslist);
+                console.log(Gameslist);
+            }
+            function postECB(err) {
+                console.log(err);
+            }
+            function rendergames(list) {
+                const gamesContainer = document.getElementById("game-container");
+                gamesContainer.innerHTML = "";
+                list.forEach(item => {
+                    const gameCard = document.createElement("div")
+                    gameCard.className = "game-card";
+                    // Add game header image
+                    const gameImage = document.createElement("img");
+                    gameImage.src = item.headerImage;
+                    gameImage.alt = item.name;
+                    gameCard.appendChild(gameImage);
+                    //name
+                    const name = document.createElement("h2")
+                    name.className = "name-card";
+                    name.innerHTML = `${item.name}`
+                    gameCard.appendChild(name);
+                    //release date
+                    const releaseDate = document.createElement("p")
+                    releaseDate.innerHTML = `release date : ${item.releaseDate}`;
+                    gameCard.appendChild(releaseDate);
+                    //price
+                    const price = document.createElement("p")
+                    price.innerHTML = `Price :${item.price}`;
+                    gameCard.appendChild(price);
+                    //rank
+                    const rank = document.createElement("p");
+                    rank.innerHTML = `Rank :${item.scoreRank}`
+                    gameCard.appendChild(rank);
+                    /// add button for adding game
+                    const Gamebutton = document.createElement("button");
+                    Gamebutton.className = "AddOrDeleteGamebtn";
+                    Gamebutton.innerHTML = "Add to my games";
+                    Gamebutton.addEventListener("click", function () {
+                        addToMyGames(item);
+                    });
+                    gameCard.appendChild(Gamebutton);
+                    gamesContainer.appendChild(gameCard);
+                });
+            }
+
+            function addToMyGames(game) {
+                console.log(game.appID);
+                console.log(user);
+                console.log(user.Id);
+                let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users/AddGametoUser?userId=${user.Id}&gameId=${game.appID}`;
+                ajaxCall("GET", api, "", addSCB, addECB);
+
+            }
+            function addSCB(message) {
+                //add pop up
+                if (message!==-1) {
+                    Swal.fire({
+                        position: "top-center",
+                        icon: "success",
+                        title: "Game added to your list!",
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+                else {
+                    Swal.fire({
+                        position: "top-center",
+                        icon: "error",
+                        title: "Game already exist",
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            }
+            function addECB(err) {
+                console.log("Error adding game:", err);
+
+            }
+        });
+
+    </script>
+
+</head>
+<body>
+
+    <h1>STEAM GAMES SHOWCASE</h1>
+
+    <div id="userName"> </div>
+    <button id="redirect">Go to My Games </button>
+    <button id="Signout">Sign out</button>
+
+    <div id="game-container"></div>
+</body>
+</html>

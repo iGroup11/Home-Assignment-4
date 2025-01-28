@@ -1,0 +1,105 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Righteous&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap');
+
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(to bottom, #1e293b, #334155);
+    color: #fff;
+}
+#redirect {
+    right: 10px;
+    position: absolute;
+    top: 0;
+}
+
+    #redirect:hover {
+        box-shadow: 0px 0px 9px 9px rgba(202, 233, 234, 0.2);
+    }
+#redirect {
+    border: none;
+    font-family: 'Righteous', sans-serif;
+    padding: 12px 24px;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    background: rgba(32, 140, 140, 0.9);
+    color: rgba(255,255,255,0.95);
+    filter: drop-shadow(0);
+    transition: all .3s ease;
+}
+
+/* Signup form container */
+.signup, .register ,.profile{
+    background: #1e293b;
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    width: 350px;
+}
+
+/* Form input fields */
+#password ,#email ,#id,#name {
+    width: 100%;
+    margin: 10px 0;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+    font-family: 'Lato', sans-serif;
+    background: #334155;
+    color: #fff;
+}
+
+/* Placeholder text style */
+ input::placeholder {
+    color: #94a3b8;
+    font-size: 12px;
+}
+
+/* Submit button styling */
+input[type="submit"] {
+    width: 50%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    font-family: 'Righteous', sans-serif;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#login , #register ,#profile{
+    font-family: 'Righteous', sans-serif;
+    font-size: 30px;
+}
+h4 {
+    font-family: 'Righteous', sans-serif;
+}
+
+input[type="submit"]:hover {
+    background: #2563eb;
+}
+
+/* Input field focus effects */
+ input[type="text"]:focus,
+ input[type="password"]:focus {
+    border: 2px solid #3b82f6;
+    background: #1e40af;
+}
+#togglePassword {
+    cursor: pointer;
+    margin-left: -30px; /* Adjust to position the icon */
+    font-size: 20px; /* Adjust icon size */
+}

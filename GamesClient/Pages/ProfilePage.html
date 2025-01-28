@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="../Scripts/AjaxCalls.js"></script>
+    <link href="../CSS/LoginStyle.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#redirect").on("click", function () {
+                window.location.href = 'index.html';  // Redirect to the index page
+            })
+            $("#password").on("input", function () {
+                var pattern = $(this).attr("pattern");
+                var value = $(this).val();
+                var message = "Please match the requested format: " + pattern + "Capital letters and digits only";
+                this.setCustomValidity(value.match(pattern) ? "" : message);
+            });
+            $("#email").on("input", function () {
+                var pattern = $(this).attr("pattern");
+                var value = $(this).val();
+                var message = "Please match the requested format: " + pattern + " example123@example.com";
+                this.setCustomValidity(value.match(pattern) ? "" : message);
+            });
+            //retrive user info from local storage
+            let user = localStorage.getItem('loggedInUser');
+            // Parse the JSON string back to a JavaScript object
+            user = JSON.parse(user);
+            let emailPlaceholder = user.Email;
+            $("#email").attr("placeholder", emailPlaceholder);
+            let namePlaceholder = user.Name;
+            $("#name").attr("placeholder", namePlaceholder);
+            let passwordPlaceholder = user.Password;
+            $("#password").attr("placeholder", passwordPlaceholder);
+            $("#myProfileForm").submit(function (e) {
+
+                e.preventDefault();
+                console.log("Name:", $("#name").val());
+                console.log("Email:", $("#email").val());
+                console.log("Password:", $("#password").val());
+                let newname = $("#name").val();
+                let newmail = $("#email").val();
+                let newpassword = $("#password").val();
+                let newuser = {
+                    Id: user.Id,
+                    Name: newname,
+                    Email: newmail,
+                    Password: newpassword
+                };
+                let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Users/${user.Id}`
+                ajaxCall("PUT", api, JSON.stringify(newuser), postSCB, postECB)
+                function postSCB(message) {
+                    console.log(user.Id)
+
+                    console.log(message);
+                    if (message === -1) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'failed!',
+                            text: 'User with this email exists - No changes were made!',
+                        });
+                    }
+                    else {
+                        Swal.fire({
+                            icon: "success",
+                            title: "Details Changed Successfuly!",
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                        let loggedUser = {
+                            Id: user.Id,
+                            Name: $("#name").val(),
+                            Email: $("#email").val(),
+                            Password: $("#password").val()
+                        };
+                        // Save the user object to local storage as a string
+                        localStorage.setItem('loggedInUser', JSON.stringify(loggedUser));
+                        //retrive user info from local storage
+                        $("#email").val("");
+                        $("#name").val("");
+                        $("#password").val("");
+                        let neweruser = localStorage.getItem('loggedInUser');
+                        // Parse the JSON string back to a JavaScript object
+                        neweruser = JSON.parse(neweruser);
+                        let newemailPlaceholder = neweruser.Email;
+                        $("#email").attr("placeholder", newemailPlaceholder);
+                        let newnamePlaceholder = neweruser.Name;
+                        $("#name").attr("placeholder", newnamePlaceholder);
+                        let newpasswordPlaceholder = neweruser.Password;
+                        $("#password").attr("placeholder", newpasswordPlaceholder);
+                        
+
+                    }
+                }
+
+                function postECB(err) {
+                    console.log(err);
+                }
+
+            });
+        })
+    </script>
+</head>
+<body>
+    <button id="redirect">Go to Games Store</button>
+
+    <div class="profile">
+        <form id="myProfileForm">
+            <h1 id="profile">Personal Details </h1>
+            <h4>you can edit your profile here:)</h4>
+            <input type="text" id="email" name="email" pattern="^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"><br>
+            <input type="text" id="name" name="name" title="Name should only contain letters" pattern="[a-zA-Z]+" maxlength="15" placeholder="Name" required><br>
+            <input type="password" id="password" name="password" pattern="[A-Z0-9]+" minlength="5" maxlength="10" placeholder="Password" required><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+</body>
+</html>

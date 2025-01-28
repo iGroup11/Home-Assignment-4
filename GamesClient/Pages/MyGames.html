@@ -1,0 +1,223 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+            crossorigin="anonymous"></script>
+    <script src="../Scripts/AjaxCalls.js"></script>
+    <link href="../CSS/GameStyle.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+    <script>
+        $(document).ready(function () { ///doing this when the page is loaded
+            // Retrieve the user object from local storage
+            let user = localStorage.getItem('loggedInUser');
+            if (user) {
+                // Parse the JSON string back to a JavaScript object
+                user = JSON.parse(user);
+                console.log("Logged in user:", user);
+                const greeting = document.getElementById("userName");
+                greeting.innerHTML = `Hello, ${user.Name} 👋🏼`;
+            }
+            else {
+                console.log("no user");
+            }
+            givemeMyGames(user);
+            $("#redirect").on("click", function () {
+                window.location.href = 'index.html';  // Redirect to the index page
+            })
+            $("#redirectToProfile").on("click", function () {
+                window.location.href = 'ProfilePage.html';
+            })
+            $("#Signout").on("click", function () {
+                //delete user from local storage ,and then redirect to login
+                localStorage.removeItem('loggedInUser')
+                window.location.href = 'LoginPage.html';
+            })
+            function applyFilters() {
+                let user = localStorage.getItem('loggedInUser');
+                user = JSON.parse(user);
+
+                const rankVal = $("#ranktext").val(); // Get rank filter value
+                const priceVal = $("#pricetext").val(); // Get price filter value
+
+                //  Both filters are empty - fetch all games for the logged in user
+                if (rankVal === "" && priceVal === "") {
+                    let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/UserGames?userId=${user.Id}`;
+                    ajaxCall("GET", api, "", filterSCB, filterECB);
+                }
+                // Either or both filters are applied
+                else {
+                    let rankResults = [];
+                    let priceResults = [];
+
+                    // do AJAX calls for each filter
+                    if (rankVal !== "") {
+                        const rankApi = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/SearchByRankScore?rank=${rankVal}&userid=${user.Id}`;
+                        ajaxCall("GET", rankApi, "", rankFilterSCB, filterECB);
+                    }
+
+                    if (priceVal !== "") {
+                        const priceApi = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/SearchByPrice?price=${priceVal}&userid=${user.Id}`;
+                        ajaxCall("GET", priceApi, "", priceFilterSCB, filterECB);
+                    }
+
+                    // scb for rank filter
+                    function rankFilterSCB(games) {
+                        rankResults = games;
+                        combineResults();
+                    }
+
+                    // scb for price filter
+                    function priceFilterSCB(games) {
+                        priceResults = games;
+                        combineResults();
+                    }
+
+                    // get results from both filters
+                    function combineResults() {
+                        let finalResults;
+
+                        // If only one filter is applied
+                        if (rankVal !== "" && priceVal === "") finalResults = rankResults;
+                        else if (priceVal !== "" && rankVal === "") finalResults = priceResults;
+                        else {
+                            // If both filters are applied, find common elements
+                            finalResults = rankResults.filter(rankGame =>
+                                priceResults.some(priceGame => priceGame.appID === rankGame.appID)
+                            );
+                        }
+
+                        rendergames(finalResults);
+                    }
+                }
+
+                // scb for no filter
+                function filterSCB(games) {
+                    rendergames(games); // Render games without filters
+                }
+                ///ecb for all errors
+                function filterECB(err) {
+                    console.error(err);
+                }
+            }
+
+            // apply filters
+            $("#pricetext").on("input", applyFilters);
+            $("#ranktext").on("input", applyFilters);
+        });
+
+
+
+
+        function givemeMyGames(user) {
+            let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/UserGames?userId=${user.Id}`;
+            ajaxCall("GET", api, "", getSCB, getECB);
+        }
+
+        function getSCB(Gameslist) {
+            rendergames(Gameslist);
+            console.log(Gameslist);
+        }
+        function getECB(err) {
+            console.log(err);
+        }
+        function rendergames(list) {
+            const gamesContainer = document.getElementById("game-container");
+            gamesContainer.innerHTML = "";
+            list.forEach(item => {
+                const gameCard = document.createElement("div")
+                gameCard.className = "game-card";
+                // Add game header image
+                const gameImage = document.createElement("img");
+                gameImage.src = item.headerImage;
+                gameImage.alt = item.name;
+                gameCard.appendChild(gameImage);
+                //name
+                const name = document.createElement("h2")
+                name.className = "name-card";
+                name.innerHTML = `${item.name}`
+                gameCard.appendChild(name);
+                //release date
+                const releaseDate = document.createElement("p")
+                releaseDate.innerHTML = `release date : ${item.releaseDate}`;
+                gameCard.appendChild(releaseDate);
+                //price
+                const price = document.createElement("p")
+                price.innerHTML = `Price :${item.price}`;
+                gameCard.appendChild(price);
+                //rank
+                const rank = document.createElement("p");
+                rank.innerHTML = `Rank :${item.scoreRank}`
+                gameCard.appendChild(rank);
+                // add button for deleting game
+                const deletebutton = document.createElement("button");
+                deletebutton.className = "AddOrDeleteGamebtn";
+                deletebutton.innerHTML = "delete";
+                deletebutton.addEventListener("click", function () {
+                    deletefrommygames(item.appID);
+
+                })
+                gameCard.appendChild(deletebutton);
+                gamesContainer.appendChild(gameCard);
+            });
+        }
+        function deletefrommygames(game) {
+            // Retrieve the user object from local storage
+            let user = localStorage.getItem('loggedInUser');
+            user = JSON.parse(user);
+
+            console.log(user.Id)
+            console.log(game)
+            let api = `https://proj.ruppin.ac.il/igroup11/test2/tar1/api/Games/Deletebyid?gameid=${game}&userid=${user.Id}`;
+            ajaxCall("DELETE", api, "", deleteSCB, deleteECB);
+        }
+        function deleteSCB(Gameslist) {
+            console.log("yes");
+            rendergames(Gameslist);
+        }
+        function deleteECB(err) {
+            console.log(err);
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Steam Games Explorer</h1>
+    <div id="userName"></div>
+    <button id="redirectToProfile">Edit My Profile</button>
+    <button id="Signout">Sign out</button>
+    <button id="redirect">Go to Games Store</button>
+    <div class="filtersDiv">
+        <div class="Card">
+            <div class="CardInner">
+                <label>Search based on price</label>
+                <div class="container">
+                    <div class="Icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#657789" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    </div>
+                    <div class="InputContainer">
+                        <input id="pricetext" placeholder="Enter minimum price" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="Card">
+            <div class="CardInner">
+                <label>Search based on rank</label>
+                <div class="container">
+                    <div class="Icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#657789" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    </div>
+                    <div class="InputContainer">
+                        <input id="ranktext" placeholder="Enter minimum rank" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="game-container"></div>
+</body>
+
+</html>
